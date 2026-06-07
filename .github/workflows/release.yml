@@ -44,9 +44,9 @@ jobs:
       - name: Generate completions
         run: |
           mkdir -p completions
-          ./target/${{ matrix.target }}/release/umbrella-fetch completions bash > completions/umbrella-fetch.bash
-          ./target/${{ matrix.target }}/release/umbrella-fetch completions zsh > completions/_umbrella-fetch
-          ./target/${{ matrix.target }}/release/umbrella-fetch completions fish > completions/umbrella-fetch.fish
+          cargo run -- completions bash > completions/umbrella-fetch.bash
+          cargo run -- completions zsh > completions/_umbrella-fetch
+          cargo run -- completions fish > completions/umbrella-fetch.fish
 
       - name: Package tarball
         run: |

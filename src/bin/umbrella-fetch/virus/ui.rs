@@ -31,7 +31,7 @@ fn block_with_title(title: &str, color: Color) -> Block<'static> {
 }
 
 pub fn draw_virus(f: &mut Frame, area: Rect, state: &VirusAppState) {
-    if area.width < 80 || area.height < 25 {
+    if area.width < 40 || area.height < 19 {
         let text = Paragraph::new("TERMINAL TOO SMALL FOR VIRUS SIMULATION. PLEASE RESIZE.")
             .style(Style::default().fg(Color::Red))
             .alignment(ratatui::layout::Alignment::Center);

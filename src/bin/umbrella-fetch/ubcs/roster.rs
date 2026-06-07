@@ -1,5 +1,9 @@
-use super::{Operative, OperativeStatus, OperativeStats};
+//! Umbrella Biohazard Countermeasure Service (U.B.C.S.) roster.
 
+use super::Operative;
+use crate::shared::{OperativeStatus, OperativeStats};
+
+/// Static list of U.B.C.S. operatives.
 pub const ROSTER: &[Operative] = &[
     Operative {
         name: "Mikhail Viktor",

@@ -1,3 +1,5 @@
+//! Full interactive dashboard renderer.
+
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
@@ -10,6 +12,7 @@ use crate::system_info::SystemInfo;
 use crate::config::Config;
 use super::shared::{block_with_title, draw_logo, draw_umbrella_info, draw_bio_assets, draw_threat_monitor};
 
+/// Orchestrates and draws all advanced TUI components.
 pub fn draw_full(f: &mut Frame, info: &SystemInfo, config: &Config, is_watch: bool, ticker_offset: usize) {
     let size = f.area();
     f.render_widget(ratatui::widgets::Clear, size);
@@ -64,6 +67,7 @@ pub fn draw_full(f: &mut Frame, info: &SystemInfo, config: &Config, is_watch: bo
     draw_ticker(f, main_chunks[3], ticker_offset);
 }
 
+/// Draws the top-center block: System identification details.
 fn draw_sys_info_full(f: &mut Frame, area: Rect, info: &SystemInfo, config: &Config) {
     let mut lines = Vec::new();
     
@@ -90,10 +94,10 @@ fn draw_sys_info_full(f: &mut Frame, area: Rect, info: &SystemInfo, config: &Con
     
     let paragraph = Paragraph::new(lines)
         .block(block_with_title("■ SYSTEM IDENTIFICATION"));
-        
     f.render_widget(paragraph, area);
 }
 
+/// Draws the top-right block (Hardware and Network).
 fn draw_hardware_and_network(f: &mut Frame, area: Rect, info: &SystemInfo) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -161,6 +165,7 @@ fn draw_hardware_and_network(f: &mut Frame, area: Rect, info: &SystemInfo) {
     f.render_widget(net_para, chunks[1]);
 }
 
+/// Draws the bottom-center panel containing local storage capacities.
 fn draw_storage(f: &mut Frame, area: Rect, info: &SystemInfo) {
     let mut lines = Vec::new();
     
@@ -181,10 +186,10 @@ fn draw_storage(f: &mut Frame, area: Rect, info: &SystemInfo) {
     
     let paragraph = Paragraph::new(lines)
         .block(block_with_title("■ STORAGE"));
-        
     f.render_widget(paragraph, area);
 }
 
+/// Draws the bottom-right panel: Simulated field log entries.
 fn draw_field_log(f: &mut Frame, area: Rect, config: &Config) {
     let mut lines = Vec::new();
     for entry in config.active_field_logs.iter() {
@@ -196,10 +201,10 @@ fn draw_field_log(f: &mut Frame, area: Rect, config: &Config) {
     
     let paragraph = Paragraph::new(lines)
         .block(block_with_title("■ FIELD LOG"));
-        
     f.render_widget(paragraph, area);
 }
 
+/// Renders the animated ticker at the bottom of the screen.
 fn draw_ticker(f: &mut Frame, area: Rect, offset: usize) {
     let full_text = crate::lore::TICKER_MESSAGES.join(" ");
     

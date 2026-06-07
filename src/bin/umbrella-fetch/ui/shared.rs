@@ -1,3 +1,5 @@
+//! Reusable UI components based on `ratatui`.
+
 use ratatui::{
     layout::Rect,
     style::{Color, Modifier, Style},
@@ -10,14 +12,17 @@ use crate::config::Config;
 
 use crate::ascii::UMBRELLA_LOGO;
 
+/// Defines the standard style for block borders: dark/dim red.
 pub fn dark_red_border() -> Style {
     Style::default().fg(Color::Red).add_modifier(Modifier::DIM)
 }
 
+/// Highlight style for block titles: bold red text.
 pub fn title_style() -> Style {
     Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)
 }
 
+/// Generates a standard corporate `Block` widget with borders and title.
 pub fn block_with_title(title: &str) -> Block<'static> {
     Block::default()
         .borders(Borders::ALL)
@@ -25,6 +30,7 @@ pub fn block_with_title(title: &str) -> Block<'static> {
         .title(Span::styled(title.to_string(), title_style()))
 }
 
+/// Draws the central or lateral panel with the classic ASCII corporate logo.
 pub fn draw_logo(f: &mut Frame, area: Rect, is_watch: bool) {
     let mut lines = Vec::new();
     for logo_line in UMBRELLA_LOGO {
@@ -46,6 +52,7 @@ pub fn draw_logo(f: &mut Frame, area: Rect, is_watch: bool) {
     f.render_widget(paragraph, area);
 }
 
+/// Renders the descriptive table with the company's organizational structure.
 pub fn draw_umbrella_info(f: &mut Frame, area: Rect, config: &Config) {
     let mut lines = Vec::new();
     let gray = Style::default().fg(Color::Gray);
@@ -88,6 +95,7 @@ pub fn draw_umbrella_info(f: &mut Frame, area: Rect, config: &Config) {
     f.render_widget(paragraph, area);
 }
 
+/// Prints a horizontal bar chart listing "biological assets" and simulated prices.
 pub fn draw_bio_assets(f: &mut Frame, area: Rect, config: &Config) {
     let assets: Vec<_> = config.active_bio_assets.iter().collect();
     let max_price = assets.iter().map(|a| a.price).max().unwrap_or(1);
@@ -122,6 +130,7 @@ pub fn draw_bio_assets(f: &mut Frame, area: Rect, config: &Config) {
     f.render_widget(paragraph, area);
 }
 
+/// Renders the global outbreak monitor.
 pub fn draw_threat_monitor(f: &mut Frame, area: Rect, config: &Config) {
     let mut lines = Vec::new();
     

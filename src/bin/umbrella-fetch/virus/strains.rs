@@ -1,9 +1,13 @@
+//! Biological strains catalog and mutation parameters.
+
 #[derive(Clone, Copy, PartialEq)]
+/// Internal unique identifier for each strain.
 pub enum StrainId {
     TVirus, GVirus, VeronicaX, LasPlagas,
     Uroboros, NemesisT, Progenitor, CVirus,
 }
 
+/// Viral strain genetic behavior profile.
 pub struct StrainProfile {
     pub id:          StrainId,
     pub arg_id:      &'static str,
@@ -26,6 +30,7 @@ pub struct StrainProfile {
     pub threat:      &'static str,
 }
 
+/// Global catalog of known Umbrella strains.
 pub const ALL_STRAINS: &[StrainProfile] = &[
     StrainProfile {
         id: StrainId::TVirus, arg_id: "t-virus", name: "T-VIRUS",
@@ -117,6 +122,7 @@ pub const ALL_STRAINS: &[StrainProfile] = &[
     },
 ];
 
+/// Finds and returns a strain profile based on its CLI ID.
 pub fn find_strain(id: &str) -> Option<&'static StrainProfile> {
     match id {
         "t-virus"    => ALL_STRAINS.iter().find(|s| s.id == StrainId::TVirus),

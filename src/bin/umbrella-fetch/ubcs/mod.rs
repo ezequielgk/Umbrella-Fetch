@@ -2,19 +2,7 @@ pub mod roster;
 pub mod state;
 pub mod ui;
 
-#[derive(Clone, Copy, PartialEq)]
-pub enum OperativeStatus {
-    Active,
-    Kia,
-    Mia,
-}
-
-pub struct OperativeStats {
-    pub strength: u8,
-    pub agility: u8,
-    pub intelligence: u8,
-    pub endurance: u8,
-}
+use crate::shared::{OperativeStatus, OperativeStats};
 
 pub struct Operative {
     pub name: &'static str,

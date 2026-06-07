@@ -1,5 +1,8 @@
+//! Biological cellular automaton logic.
+
 use super::strains::StrainProfile;
 
+/// 2D grid containing the viral simulation state.
 pub struct ViralGrid {
     pub grid:    Vec<bool>,
     pub age:     Vec<u8>,
@@ -10,6 +13,7 @@ pub struct ViralGrid {
 }
 
 impl ViralGrid {
+    /// Initializes a new seeded viral grid.
     pub fn new(cols: usize, rows: usize, strain: &'static StrainProfile) -> Self {
         let mut vg = Self {
             grid: vec![false; cols * rows],
@@ -23,6 +27,7 @@ impl ViralGrid {
         vg
     }
 
+    /// Clears the grid and plants an initial cluster in the center.
     pub fn seed(&mut self) {
         self.grid.fill(false);
         self.age.fill(0);
@@ -60,44 +65,58 @@ impl ViralGrid {
         n
     }
 
+    /// Executes the simulation logic for the next generation.
     pub fn step(&mut self) {
         let s = self.strain;
         let mut next = vec![false; self.cols * self.rows];
+        let mut changed = false;
         
         for y in 0..self.rows {
             for x in 0..self.cols {
                 let i = y * self.cols + x;
                 let n = self.neighbors(x, y);
                 
+                let mut alive = false;
                 if self.grid[i] {
                     self.age[i] = self.age[i].saturating_add(1);
                     let should_die = self.age[i] > 12 && rand::random::<f32>() < s.decay_prob;
                     
-                    if should_die {
-                        next[i] = false;
-                    } else {
-                        if n >= s.survive_min && n <= s.survive_max {
-                            next[i] = true;
-                        } else {
-                
-                            next[i] = false;
-                        }
+                    if !should_die && n >= s.survive_min && n <= s.survive_max {
+                        alive = true;
                     }
                 } else {
                     if n >= s.birth_min && n <= s.birth_max && rand::random::<f32>() < s.spread_prob {
-                        next[i] = true;
+                        alive = true;
                         self.age[i] = 0;
-                    } else {
-                        next[i] = false;
                     }
                 }
+                
+                next[i] = alive;
+                if alive != self.grid[i] {
+                    changed = true;
+                }
             }
+        }
+        
+        let alive_count = next.iter().filter(|&&c| c).count();
+        if !changed || alive_count == 0 {
+            self.seed();
+            return;
+        }
+        
+        let mutation_count = (self.cols * self.rows) / 250 + 1;
+        for _ in 0..mutation_count {
+            let rx = (rand::random::<u64>() as usize) % self.cols;
+            let ry = (rand::random::<u64>() as usize) % self.rows;
+            let ri = ry * self.cols + rx;
+            next[ri] = true;
+            self.age[ri] = 0;
         }
         
         self.grid = next;
         self.tick += 1;
         
-        if self.tick % 220 == 0 {
+        if self.tick % 300 == 0 {
             self.seed();
         }
     }

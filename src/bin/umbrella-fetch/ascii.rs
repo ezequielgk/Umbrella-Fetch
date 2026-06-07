@@ -1,3 +1,6 @@
+//! ASCII art used in the CLI interface.
+
+/// Umbrella Corporation octagonal logo in ASCII.
 pub const UMBRELLA_LOGO: &[&str] = &[
     "     „        „     ",
     "    d#[......]#+    ",

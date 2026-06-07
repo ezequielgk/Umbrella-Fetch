@@ -1,11 +1,11 @@
-//! Interactive TUI state for the U.B.C.S. command.
+//! Interactive TUI state for the U.S.S. command.
 
 use super::roster::ROSTER;
-use super::Operative;
+use super::UssOperative;
 use crate::shared::OperativeStatus;
 
-/// In-memory state of the U.B.C.S. interactive panel.
-pub struct UbcsAppState {
+/// In-memory state of the U.S.S. interactive panel.
+pub struct UssAppState {
     pub selected_index: usize,
     pub show_detail: bool,
     pub filter_squad: Option<&'static str>,
@@ -13,8 +13,8 @@ pub struct UbcsAppState {
     pub sort_price_asc: Option<bool>,
 }
 
-impl UbcsAppState {
-    /// Default constructor initializing a clean state.
+impl UssAppState {
+    /// Initializes a clean empty state.
     pub fn new() -> Self {
         Self {
             selected_index: 0,
@@ -25,11 +25,16 @@ impl UbcsAppState {
         }
     }
 
-    /// Filters and sorts the immutable `ROSTER` according to selected criteria.
-    pub fn get_filtered_roster(&self) -> Vec<&'static Operative> {
-        let mut filtered: Vec<&'static Operative> = ROSTER.iter().filter(|op| {
+    /// Filters the immutable U.S.S. `ROSTER` with current configuration.
+    pub fn get_filtered_roster(&self) -> Vec<&'static UssOperative> {
+        let mut filtered: Vec<&'static UssOperative> = ROSTER.iter().filter(|op| {
             if let Some(sq) = self.filter_squad {
-                if op.squad != sq { return false; }
+                // Not standard "squad" in USS, but they have alpha_id
+                // We'll filter based on prefix or just dummy it out.
+                // The prompt mentions `--squad alpha` -> filter by team.
+                // UssOperative doesn't have a `squad` field, but has `alpha_id`.
+                // Let's filter by checking if `alpha_id` starts with `sq`.
+                if !op.alpha_id.starts_with(sq) { return false; }
             }
             if let Some(st) = self.filter_status {
                 if op.status != st { return false; }
@@ -49,7 +54,7 @@ impl UbcsAppState {
         filtered
     }
 
-    /// Advances the selection cursor to the next element.
+    /// Moves the list cursor down.
     pub fn next(&mut self) {
         let max = self.get_filtered_roster().len();
         if max > 0 {
@@ -57,7 +62,7 @@ impl UbcsAppState {
         }
     }
 
-    /// Moves the selection cursor to the previous element.
+    /// Moves the list cursor up.
     pub fn previous(&mut self) {
         let max = self.get_filtered_roster().len();
         if max > 0 {
@@ -69,7 +74,7 @@ impl UbcsAppState {
         }
     }
 
-    /// Cycles the squad filter.
+    /// Rotates squad filters.
     pub fn cycle_squad_filter(&mut self) {
         self.filter_squad = match self.filter_squad {
             None => Some("ALPHA"),
@@ -81,19 +86,19 @@ impl UbcsAppState {
         self.reset_selection();
     }
 
-    /// Cycles the status filter.
+    /// Rotates status filters.
     pub fn cycle_status_filter(&mut self) {
         self.filter_status = match self.filter_status {
             None => Some(OperativeStatus::Active),
             Some(OperativeStatus::Active) => Some(OperativeStatus::Kia),
             Some(OperativeStatus::Kia) => Some(OperativeStatus::Mia),
-            Some(OperativeStatus::Mia) => None,
+            Some(OperativeStatus::Mia) => Some(OperativeStatus::Retired),
             Some(OperativeStatus::Retired) => None,
         };
         self.reset_selection();
     }
 
-    /// Toggles the price sorting order.
+    /// Toggles the salary sorting algorithm.
     pub fn toggle_price_sort(&mut self) {
         self.sort_price_asc = match self.sort_price_asc {
             None => Some(true),

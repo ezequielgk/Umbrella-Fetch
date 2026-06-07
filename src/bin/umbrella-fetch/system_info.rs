@@ -1,6 +1,9 @@
+//! System and hardware information collection.
+
 use sysinfo::{System, Disks};
 use std::fs;
 
+/// Consolidated system telemetry data.
 pub struct SystemInfo {
     pub user: String,
     pub hostname: String,
@@ -27,6 +30,7 @@ pub struct SystemInfo {
 }
 
 impl SystemInfo {
+    /// Gathers all system information in a single call.
     pub fn fetch() -> Self {
         let mut sys = System::new_all();
         sys.refresh_all();
@@ -60,13 +64,18 @@ impl SystemInfo {
         let swap_used_gb = sys.used_swap() as f64 / 1_073_741_824.0;
         let swap_total_gb = sys.total_swap() as f64 / 1_073_741_824.0;
         
-        let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/sh".to_string());
+        let shell = std::env::var("SHELL")
+            .unwrap_or_else(|_| "/bin/sh".to_string())
+            .split('/')
+            .last()
+            .unwrap_or("unknown")
+            .to_string();
+            
         let wm = std::env::var("XDG_SESSION_DESKTOP").unwrap_or_else(|_| "Unknown".to_string());
         let display = std::env::var("WAYLAND_DISPLAY")
             .or_else(|_| std::env::var("DISPLAY"))
             .unwrap_or_else(|_| "TTY".to_string());
             
-        // Count pkgs
         let pkgs = if let Ok(entries) = fs::read_dir("/var/lib/dpkg/info") {
             let count = entries.filter_map(Result::ok)
                 .filter(|e| e.path().extension().map_or(false, |ext| ext == "list"))

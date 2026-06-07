@@ -1,9 +1,12 @@
-use std::{env, io::{self, stdout}, time::Duration};
+//! Main entry point and CLI router for Umbrella Fetch.
+
+use std::{io::{self, stdout}, time::Duration};
 use crossterm::{
     event,
     terminal::{disable_raw_mode, enable_raw_mode},
 };
 use ratatui::{prelude::*, TerminalOptions, Viewport};
+use clap::{Parser, Subcommand, CommandFactory};
 
 mod ascii;
 mod config;
@@ -11,87 +14,115 @@ mod lore;
 mod system_info;
 mod ui;
 mod virus;
+mod shared;
 mod ubcs;
+mod uss;
+mod minimal;
 
-struct UbcsArgs {
-    list: bool,
-    squad: Option<String>,
+/// CLI arguments parser.
+#[derive(Parser)]
+#[command(name = "umbrella-fetch")]
+#[command(about = "Umbrella Corporation Terminal Feed", long_about = None)]
+struct Cli {
+    #[command(subcommand)]
+    command: Option<Commands>,
+
+    /// Watch feed continuously (seconds)
+    #[arg(long, global = true)]
+    watch: Option<Option<u64>>,
 }
 
-struct VirusArgs {
-    strain: String,
-    list: bool,
-}
-
-enum Command {
+/// Available subcommands.
+#[derive(Subcommand)]
+enum Commands {
+    /// Full secure feed
     Full,
-    Ubcs(UbcsArgs),
-    Virus(VirusArgs),
+    
+    /// U.B.C.S. roster and status
+    Ubcs {
+        /// List roster
+        #[arg(long)]
+        list: bool,
+        /// Filter by squad
+        #[arg(long)]
+        squad: Option<String>,
+    },
+    
+    /// Virus strain simulation
+    Virus {
+        /// List strains
+        #[arg(long)]
+        list: bool,
+        /// Select strain
+        #[arg(long, default_value = "t-virus")]
+        strain: String,
+    },
+    
+    /// U.S.S. classified roster
+    Uss {
+        /// List classified roster
+        #[arg(long)]
+        list: bool,
+        /// Filter by squad
+        #[arg(long)]
+        squad: Option<String>,
+        /// Filter by status
+        #[arg(long)]
+        status: Option<String>,
+    },
+    
+    /// Minimal system fetch
+    Minimal,
+    /// Alias for minimal fetch
+    Fetch,
+    
+    /// Generate shell completions
+    #[command(hide = true)]
+    Completions {
+        #[arg(value_enum)]
+        shell: clap_complete::Shell,
+    },
 }
 
+/// Internal parsed command state.
+enum AppCommand {
+    Full,
+    Ubcs { list: bool, squad: Option<String> },
+    Virus { strain: String, list: bool },
+    Uss { list: bool, squad: Option<String>, status: Option<String> },
+    Minimal,
+}
+
+/// Main application entry point.
 fn main() -> io::Result<()> {
-    let args: Vec<String> = env::args().collect();
+    let cli = Cli::parse();
     
-    let mut command = Command::Full;
-    let mut watch_secs = None;
-    
-    let mut i = 1;
-    while i < args.len() {
-        match args[i].as_str() {
-            "full" => command = Command::Full,
-            "ubcs" => {
-                let mut u_args = UbcsArgs { list: false, squad: None };
-                let mut j = i + 1;
-                while j < args.len() {
-                    if args[j] == "--list" {
-                        u_args.list = true;
-                    } else if args[j] == "--squad" && j + 1 < args.len() {
-                        u_args.squad = Some(args[j+1].to_uppercase());
-                        j += 1;
-                    }
-                    j += 1;
-                }
-                command = Command::Ubcs(u_args);
-                break;
-            }
-            "virus" => {
-                let mut v_args = VirusArgs { strain: "t-virus".to_string(), list: false };
-                let mut j = i + 1;
-                while j < args.len() {
-                    if args[j] == "--list" {
-                        v_args.list = true;
-                    } else if args[j] == "--strain" && j + 1 < args.len() {
-                        v_args.strain = args[j+1].clone();
-                        j += 1;
-                    }
-                    j += 1;
-                }
-                command = Command::Virus(v_args);
-                break;
-            }
-            "--watch" => {
-                if i + 1 < args.len() {
-                    if let Ok(secs) = args[i+1].parse::<u64>() {
-                        watch_secs = Some(secs);
-                        i += 1;
-                    } else {
-                        watch_secs = Some(2);
-                    }
-                } else {
-                    watch_secs = Some(2);
-                }
-            }
-            _ => {}
+    let watch_secs = match cli.watch {
+        Some(Some(secs)) => Some(secs),
+        Some(None) => Some(2),
+        None => None,
+    };
+
+    let command = match cli.command.unwrap_or(Commands::Full) {
+        Commands::Full => AppCommand::Full,
+        Commands::Ubcs { list, squad } => AppCommand::Ubcs { list, squad },
+        Commands::Virus { list, strain } => AppCommand::Virus { list, strain },
+        Commands::Uss { list, squad, status } => AppCommand::Uss { list, squad, status },
+        Commands::Minimal | Commands::Fetch => AppCommand::Minimal,
+        Commands::Completions { shell } => {
+            let mut cmd = Cli::command();
+            let bin_name = cmd.get_name().to_string();
+            clap_complete::generate(shell, &mut cmd, bin_name, &mut std::io::stdout());
+            return Ok(());
         }
-        i += 1;
-    }
+    };
 
     match command {
-        Command::Ubcs(u_args) => {
-            if u_args.list {
+        AppCommand::Ubcs { list, squad } => {
+            if list {
                 println!("\nU.B.C.S. ROSTER\n");
                 let iter = ubcs::roster::ROSTER.iter().filter(|op| {
-                    if let Some(sq) = &u_args.squad {
+                    if let Some(sq) = &squad {
                         &op.squad.to_string() == sq
                     } else {
                         true
@@ -99,9 +130,10 @@ fn main() -> io::Result<()> {
                 });
                 for op in iter {
                     let c = match op.status {
-                        ubcs::OperativeStatus::Active => crossterm::style::Color::Green,
-                        ubcs::OperativeStatus::Kia => crossterm::style::Color::Red,
-                        ubcs::OperativeStatus::Mia => crossterm::style::Color::DarkGrey,
+                        crate::shared::OperativeStatus::Active => crossterm::style::Color::Green,
+                        crate::shared::OperativeStatus::Kia => crossterm::style::Color::Red,
+                        crate::shared::OperativeStatus::Mia => crossterm::style::Color::DarkGrey,
+                        crate::shared::OperativeStatus::Retired => crossterm::style::Color::DarkGrey,
                     };
                     let _ = crossterm::execute!(stdout(), crossterm::style::SetForegroundColor(c));
                     println!("{:<12} {:<20} {:<8} {}", op.rank, op.name, op.squad, op.speciality);
@@ -112,7 +144,7 @@ fn main() -> io::Result<()> {
             }
 
             let mut state = ubcs::state::UbcsAppState::new();
-            if let Some(sq) = &u_args.squad {
+            if let Some(sq) = &squad {
                 state.filter_squad = match sq.as_str() {
                     "ALPHA" => Some("ALPHA"),
                     "BRAVO" => Some("BRAVO"),
@@ -151,8 +183,8 @@ fn main() -> io::Result<()> {
             disable_raw_mode()?;
             return Ok(());
         }
-        Command::Virus(v_args) => {
-            if v_args.list {
+        AppCommand::Virus { strain, list } => {
+            if list {
                 println!("\nAVAILABLE STRAINS — umbrella-fetch virus --strain <id>\n");
                 for s in virus::strains::ALL_STRAINS {
                     let _ = crossterm::execute!(
@@ -166,10 +198,10 @@ fn main() -> io::Result<()> {
                 return Ok(());
             }
 
-            let profile = match virus::strains::find_strain(&v_args.strain) {
+            let profile = match virus::strains::find_strain(&strain) {
                 Some(p) => p,
                 None => {
-                    eprintln!("ERROR: Unknown strain '{}'. Run 'umbrella-fetch virus --list' for available strains.", v_args.strain);
+                    eprintln!("ERROR: Unknown strain '{}'. Run 'umbrella-fetch virus --list' for available strains.", strain);
                     std::process::exit(1);
                 }
             };
@@ -217,6 +249,96 @@ fn main() -> io::Result<()> {
             disable_raw_mode()?;
             return Ok(());
         }
+        AppCommand::Uss { list, squad, status } => {
+            if list {
+                println!("\nU.S.S. ROSTER — CLASSIFIED\n");
+                let iter = uss::roster::ROSTER.iter().filter(|op| {
+                    let mut ok = true;
+                    if let Some(sq) = &squad {
+                        if !op.alpha_id.starts_with(sq) { ok = false; }
+                    }
+                    if let Some(st_str) = &status {
+                        let st = match st_str.as_str() {
+                            "active" => Some(crate::shared::OperativeStatus::Active),
+                            "kia" => Some(crate::shared::OperativeStatus::Kia),
+                            "mia" => Some(crate::shared::OperativeStatus::Mia),
+                            "retired" => Some(crate::shared::OperativeStatus::Retired),
+                            _ => None,
+                        };
+                        if let Some(s) = st {
+                            if op.status != s { ok = false; }
+                        }
+                    }
+                    ok
+                });
+                for op in iter {
+                    let c = match op.status {
+                        crate::shared::OperativeStatus::Active => crossterm::style::Color::DarkGreen,
+                        crate::shared::OperativeStatus::Kia => crossterm::style::Color::DarkRed,
+                        crate::shared::OperativeStatus::Mia => crossterm::style::Color::DarkGrey,
+                        crate::shared::OperativeStatus::Retired => crossterm::style::Color::Grey,
+                    };
+                    let _ = crossterm::execute!(stdout(), crossterm::style::SetForegroundColor(c));
+                    println!("{:<10} {:<20} {:<20} {}", op.alpha_id, op.codename, op.speciality, if op.real_name.is_none() { "REDACTED" } else { op.real_name.unwrap() });
+                }
+                let _ = crossterm::execute!(stdout(), crossterm::style::ResetColor);
+                println!("");
+                return Ok(());
+            }
+
+            let mut state = uss::state::UssAppState::new();
+            if let Some(sq) = &squad {
+                state.filter_squad = match sq.as_str() {
+                    "ALPHA" => Some("ALPHA"),
+                    _ => None,
+                };
+            }
+            if let Some(st_str) = &status {
+                state.filter_status = match st_str.as_str() {
+                    "active" => Some(crate::shared::OperativeStatus::Active),
+                    "kia" => Some(crate::shared::OperativeStatus::Kia),
+                    "mia" => Some(crate::shared::OperativeStatus::Mia),
+                    "retired" => Some(crate::shared::OperativeStatus::Retired),
+                    _ => None,
+                };
+            }
+
+            enable_raw_mode()?;
+            crossterm::execute!(stdout(), crossterm::terminal::EnterAlternateScreen)?;
+            let mut terminal = Terminal::with_options(CrosstermBackend::new(stdout()), TerminalOptions { viewport: Viewport::Fullscreen })?;
+            
+            let tick_rate = Duration::from_millis(80);
+            loop {
+                terminal.draw(|f| {
+                    uss::ui::draw_uss(f, f.area(), &state);
+                })?;
+                
+                if event::poll(tick_rate)? {
+                    if let event::Event::Key(key) = event::read()? {
+                        match key.code {
+                            event::KeyCode::Char('q') | event::KeyCode::Esc | event::KeyCode::Char('c') => break,
+                            event::KeyCode::Up | event::KeyCode::Char('k') => state.previous(),
+                            event::KeyCode::Down | event::KeyCode::Char('j') => state.next(),
+                            event::KeyCode::Enter | event::KeyCode::Char(' ') => state.show_detail = !state.show_detail,
+                            event::KeyCode::Char('f') => state.cycle_squad_filter(),
+                            event::KeyCode::Char('s') => state.cycle_status_filter(),
+                            event::KeyCode::Char('p') => state.toggle_price_sort(),
+                            _ => {}
+                        }
+                    }
+                }
+            }
+            
+            crossterm::execute!(stdout(), crossterm::terminal::LeaveAlternateScreen)?;
+            disable_raw_mode()?;
+            return Ok(());
+        }
+        AppCommand::Minimal => {
+            let config = config::Config::load();
+            let info = system_info::SystemInfo::fetch();
+            minimal::print_minimal_fetch(&info, &config)?;
+            return Ok(());
+        }
         _ => {}
     }
 
@@ -247,7 +369,7 @@ fn main() -> io::Result<()> {
     loop {
         terminal.draw(|f| {
             match command {
-                Command::Full => ui::full::draw_full(f, &info, &config, watch_secs.is_some(), ticker_offset),
+                AppCommand::Full => ui::full::draw_full(f, &info, &config, watch_secs.is_some(), ticker_offset),
                 _ => {}
             }
         })?;

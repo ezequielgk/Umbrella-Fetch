@@ -6,8 +6,10 @@ use ratatui::{
     Frame,
 };
 
-use super::{OperativeStatus, state::UbcsAppState};
+use super::state::UbcsAppState;
+use crate::shared::OperativeStatus;
 use crate::ubcs::roster::ROSTER;
+use crate::ascii::UMBRELLA_LOGO;
 
 fn dark_red_border() -> Style {
     Style::default().fg(Color::Red).add_modifier(Modifier::DIM)
@@ -25,11 +27,12 @@ fn format_status(status: &OperativeStatus) -> Span<'static> {
         OperativeStatus::Active => Span::styled("ACTIVE", Style::default().fg(Color::Rgb(0, 100, 0))),
         OperativeStatus::Kia => Span::styled("KIA", Style::default().fg(Color::Red)),
         OperativeStatus::Mia => Span::styled("MIA", Style::default().fg(Color::DarkGray)),
+        OperativeStatus::Retired => Span::styled("RET", Style::default().fg(Color::DarkGray)),
     }
 }
 
 pub fn draw_ubcs(f: &mut Frame, area: Rect, state: &UbcsAppState) {
-    if area.width < 100 || area.height < 30 {
+    if area.width < 80 || area.height < 30 {
         let text = Paragraph::new("TERMINAL TOO SMALL FOR UBCS FEED. PLEASE RESIZE.")
             .style(Style::default().fg(Color::Red))
             .alignment(ratatui::layout::Alignment::Center);
@@ -43,8 +46,8 @@ pub fn draw_ubcs(f: &mut Frame, area: Rect, state: &UbcsAppState) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Percentage(30), // Top Zone
-            Constraint::Percentage(65), // Bottom Zone
+            Constraint::Length(19),     // Top Zone
+            Constraint::Min(10),        // Bottom Zone
             Constraint::Length(1),      // Footer
         ])
         .split(area);
@@ -75,24 +78,18 @@ pub fn draw_ubcs(f: &mut Frame, area: Rect, state: &UbcsAppState) {
 }
 
 fn draw_top_left(f: &mut Frame, area: Rect) {
-    let logo = vec![
-        "  █   █  ████   ████   ████  ",
-        "  █   █  █   █  █     █      ",
-        "  █   █  ████   █      ████  ",
-        "  █   █  █   █  █          █ ",
-        "   ███   ████   ████   ████  ",
-    ];
-    
     let mut lines = Vec::new();
-    lines.push(Line::from(""));
-    for l in logo {
-        lines.push(Line::from(Span::styled(l, Style::default().fg(Color::Red).add_modifier(Modifier::BOLD))));
+    
+    for l in UMBRELLA_LOGO {
+        lines.push(Line::from(Span::styled(*l, Style::default().fg(Color::Red))));
     }
     lines.push(Line::from(""));
-    lines.push(Line::from(Span::styled(" UMBRELLA BIOHAZARD COUNTERMEASURE SERVICE", Style::default().fg(Color::Gray))));
-    lines.push(Line::from(Span::styled(" EST. 1998 | COVERT OPS DIVISION", Style::default().fg(Color::DarkGray))));
+    lines.push(Line::from(Span::styled("U B C S", Style::default().fg(Color::Red).add_modifier(Modifier::BOLD))));
+    lines.push(Line::from(Span::styled("UMBRELLA BIOHAZARD COUNTERMEASURE SERVICE", Style::default().fg(Color::Gray))));
+    lines.push(Line::from(Span::styled("EST. 1998 | COVERT OPS DIVISION", Style::default().fg(Color::DarkGray))));
     
-    f.render_widget(Paragraph::new(lines).block(block_with_title("■ U.B.C.S. DATABASE", Color::Red)), area);
+    let paragraph = Paragraph::new(lines).block(block_with_title("■ U.B.C.S. DATABASE", Color::Red)).alignment(ratatui::layout::Alignment::Center);
+    f.render_widget(paragraph, area);
 }
 
 fn draw_top_right(f: &mut Frame, area: Rect) {
@@ -104,6 +101,7 @@ fn draw_top_right(f: &mut Frame, area: Rect) {
             OperativeStatus::Active => active += 1,
             OperativeStatus::Kia => kia += 1,
             OperativeStatus::Mia => mia += 1,
+            OperativeStatus::Retired => {}
         }
     }
     
@@ -170,6 +168,7 @@ fn draw_roster_table(f: &mut Frame, area: Rect, state: &UbcsAppState) {
             Some(OperativeStatus::Active) => "ACTIVE",
             Some(OperativeStatus::Kia) => "KIA",
             Some(OperativeStatus::Mia) => "MIA",
+            Some(OperativeStatus::Retired) => "RETIRED",
             None => "ALL"
         },
         match state.sort_price_asc {

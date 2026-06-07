@@ -73,8 +73,6 @@ enum Commands {
     
     /// Minimal system fetch
     Minimal,
-    /// Alias for minimal fetch
-    Fetch,
     
     /// Generate shell completions
     #[command(hide = true)]
@@ -108,7 +106,7 @@ fn main() -> io::Result<()> {
         Commands::Ubcs { list, squad } => AppCommand::Ubcs { list, squad },
         Commands::Virus { list, strain } => AppCommand::Virus { list, strain },
         Commands::Uss { list, squad, status } => AppCommand::Uss { list, squad, status },
-        Commands::Minimal | Commands::Fetch => AppCommand::Minimal,
+        Commands::Minimal => AppCommand::Minimal,
         Commands::Completions { shell } => {
             let mut cmd = Cli::command();
             let bin_name = cmd.get_name().to_string();

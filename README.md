@@ -23,21 +23,21 @@ INSTALL_DIR=/usr/local/bin bash install.sh
 
 Once installed, you have several commands at your disposal. Some open a Terminal User Interface (TUI) and others statically list information in the console.
 
-### Minimal Fetch
-```bash
-# Start the interactive minimalist fetch
-umbrella-fetch minimal
-# or simply:
-umbrella-fetch
-```
-![Minimal Fetch](assets/fetch.png)
-
 ### Full Dashboard
 ```bash
 # Start the advanced dashboard (multiple windows, telemetry, and global threat)
 umbrella-fetch full
+# or simply:
+umbrella-fetch
 ```
 ![Full Dashboard](assets/normal.png)
+
+### Minimal Fetch
+```bash
+# Start the interactive minimalist fetch
+umbrella-fetch minimal
+```
+![Minimal Fetch](assets/fetch.png)
 
 ### U.B.C.S. Roster
 ```bash

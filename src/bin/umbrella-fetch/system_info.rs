@@ -76,13 +76,44 @@ impl SystemInfo {
             .or_else(|_| std::env::var("DISPLAY"))
             .unwrap_or_else(|_| "TTY".to_string());
             
-        let pkgs = if let Ok(entries) = fs::read_dir("/var/lib/dpkg/info") {
-            let count = entries.filter_map(Result::ok)
-                .filter(|e| e.path().extension().map_or(false, |ext| ext == "list"))
-                .count();
-            format!("{} (dpkg)", count)
-        } else {
-            "Unknown".to_string()
+        let pkgs = {
+            let mut result = "Unknown".to_string();
+            
+            // Arch Linux (pacman)
+            if let Ok(entries) = fs::read_dir("/var/lib/pacman/local") {
+                let count = entries.filter_map(Result::ok).filter(|e| e.file_type().map_or(false, |ft| ft.is_dir())).count();
+                if count > 0 { result = format!("{} (pacman)", count); }
+            }
+            
+            // Debian/Ubuntu (dpkg)
+            if result == "Unknown" {
+                if let Ok(entries) = fs::read_dir("/var/lib/dpkg/info") {
+                    let count = entries.filter_map(Result::ok).filter(|e| e.path().extension().map_or(false, |ext| ext == "list")).count();
+                    if count > 0 { result = format!("{} (dpkg)", count); }
+                }
+            }
+            
+            // Void Linux (xbps)
+            if result == "Unknown" && std::process::Command::new("xbps-query").arg("-V").output().is_ok() {
+                if let Ok(output) = std::process::Command::new("sh").arg("-c").arg("xbps-query -l | wc -l").output() {
+                    let count_str = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                    if let Ok(count) = count_str.parse::<usize>() {
+                        if count > 0 { result = format!("{} (xbps)", count); }
+                    }
+                }
+            }
+            
+            // Fedora/RedHat (rpm)
+            if result == "Unknown" && std::process::Command::new("rpm").arg("--version").output().is_ok() {
+                if let Ok(output) = std::process::Command::new("sh").arg("-c").arg("rpm -qa | wc -l").output() {
+                    let count_str = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                    if let Ok(count) = count_str.parse::<usize>() {
+                        if count > 0 { result = format!("{} (rpm)", count); }
+                    }
+                }
+            }
+            
+            result
         };
         
         let mut gpu_info = "Unknown".to_string();

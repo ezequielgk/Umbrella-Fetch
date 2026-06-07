@@ -1,0 +1,28 @@
+[package]
+name = "umbrella"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+colored = "2.1"
+ratatui = "0.29"
+crossterm = "0.28"
+sysinfo = "0.33"
+whoami = "1.5"
+chrono = "0.4"
+rand = "0.10.1"
+serde = { version = "1.0.228", features = ["derive"] }
+toml = "1.1.2"
+directories = "6.0.0"
+
+[[bin]]
+name = "umbrella"
+path = "src/bin/umbrella.rs"
+
+[[bin]]
+name = "ubcs"
+path = "src/bin/ubcs.rs"
+
+[[bin]]
+name = "umbrella-fetch"
+path = "src/bin/umbrella-fetch/main.rs"

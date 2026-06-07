@@ -18,13 +18,5 @@ clap = { version = "4.5", features = ["derive"] }
 clap_complete = "4.5"
 
 [[bin]]
-name = "umbrella"
-path = "src/bin/umbrella.rs"
-
-[[bin]]
-name = "ubcs"
-path = "src/bin/ubcs.rs"
-
-[[bin]]
 name = "umbrella-fetch"
 path = "src/bin/umbrella-fetch/main.rs"

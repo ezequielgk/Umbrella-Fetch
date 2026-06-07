@@ -23,25 +23,42 @@ INSTALL_DIR=/usr/local/bin bash install.sh
 
 Once installed, you have several commands at your disposal. Some open a Terminal User Interface (TUI) and others statically list information in the console.
 
+### Minimal Fetch
 ```bash
 # Start the interactive minimalist fetch
 umbrella-fetch minimal
 # or simply:
 umbrella-fetch
+```
+![Minimal Fetch](assets/fetch.png)
 
+### Full Dashboard
+```bash
 # Start the advanced dashboard (multiple windows, telemetry, and global threat)
 umbrella-fetch full
+```
+![Full Dashboard](assets/normal.png)
 
+### U.B.C.S. Roster
+```bash
 # View the U.B.C.S. mercenaries database (TUI)
 umbrella-fetch ubcs
+```
+![U.B.C.S. Database](assets/ubcs.png)
 
+### U.S.S. Classified Roster
+```bash
 # View the classified U.S.S. forces database (TUI)
 umbrella-fetch uss
+```
+![U.S.S. Database](assets/uss.png)
 
+### Viral Simulation
+```bash
 # View a cellular automaton simulation of a viral outbreak
 umbrella-fetch virus --strain t-virus
 ```
-
+![Viral Simulation](assets/virus.png)
 ### Static Options
 
 If you only want to print information in the terminal instead of opening the interactive mode (ideal for scripts):

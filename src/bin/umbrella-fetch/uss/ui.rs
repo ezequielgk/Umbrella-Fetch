@@ -116,9 +116,9 @@ pub fn draw_uss(f: &mut Frame, area: Rect, state: &UssAppState) {
     draw_clearance(f, bot_chunks[2]);
 
     // Footer
-    let footer_text = "UNAUTHORIZED ACCESS IS PUNISHABLE BY TERMINATION";
+    let footer_text = " ↑↓ NAVIGATE   ENTER DETAIL   f FILTER SQUAD   s FILTER STATUS   p SORT PRICE   q QUIT ";
     f.render_widget(
-        Paragraph::new(Span::styled(footer_text, Style::default().fg(ACCENT_RED).add_modifier(Modifier::BOLD)))
+        Paragraph::new(Span::styled(footer_text, Style::default().fg(Color::DarkGray).add_modifier(Modifier::BOLD)))
             .alignment(Alignment::Center),
         chunks[5]
     );

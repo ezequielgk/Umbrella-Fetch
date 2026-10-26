@@ -19,6 +19,49 @@ curl -fsSL https://raw.githubusercontent.com/ezequielgk/Umbrella-Fetch/main/inst
 INSTALL_DIR=/usr/local/bin bash install.sh
 ```
 
+### NixOS
+
+Run it without installation:
+
+```bash
+nix run github:ezequielgk/Umbrella-Fetch#umbrella-fetch
+```
+
+Nix profile:
+
+```bash
+nix profile add github:ezequielgk/Umbrella-Fetch#umbrella-fetch
+```
+
+Flakes:
+
+```nix
+# flake.nix
+{
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    umbrella-fetch = {
+      url = "github:ezequielgk/Umbrella-Fetch";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+  };
+
+  outputs = { self, nixpkgs, ... } @ inputs: {
+    nixosConfigurations.yourhostname = nixpkgs.lib.nixosSystem {
+      system = "x86_64-linux";
+      modules = [
+        ./configuration.nix
+        ({ pkgs, ... }: {
+          environment.systemPackages = [
+            inputs.umbrella-fetch.packages.${pkgs.stdenv.hostPlatform.system}.default
+          ];
+        })
+      ];
+    };
+  };
+}
+```
+
 ## General Usage
 
 Once installed, you have several commands at your disposal. Some open a Terminal User Interface (TUI) and others statically list information in the console.
